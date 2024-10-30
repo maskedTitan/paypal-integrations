@@ -699,7 +699,6 @@ export async function createPaymentToken(accessToken, vaultSetupToken) {
  */
 export async function getPaymentTokens(accessToken, customerId) {
   try {
-    console.log(customerId)
     const response = await fetch(`https://api-m.sandbox.paypal.com/v3/vault/payment-tokens?customer_id=${customerId}`, {
       method: 'GET',
       headers: {
@@ -716,7 +715,6 @@ export async function getPaymentTokens(accessToken, customerId) {
     console.log('Payment Tokens:', data); // Log the response for debugging
     return data;
   } catch (error) {
-    console.error('Error retrieving payment tokens:', error);
     throw error;
   }
 }
