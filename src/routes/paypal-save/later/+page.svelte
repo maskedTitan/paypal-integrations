@@ -265,6 +265,12 @@ Charge Customer
       </div>
     {/if}
   </div>
+
+            <!-- Footer Section -->
+            <footer class="py-4 text-center">
+                <a href="/" class="text-blue-600 hover:text-blue-800 font-medium">Back to Home</a>
+              </footer>
+            
   
   <style>
     /* Add some styles for better UI */
