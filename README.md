@@ -1,4 +1,4 @@
-# Integrations Repository for PayPal and Braintree integrations
+# Integrations Repository for PayPal and Braintree
 
 ## Developing
 
