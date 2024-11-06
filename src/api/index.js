@@ -429,72 +429,89 @@ function generateUUID() {
  * @throws {Error} - Throws an error if the request fails.
  */
 
-export async function createOrder(accessToken, amount = '100.00', env = 'sandbox', savePaymentMethod = false) {
+export async function createOrder(
+  accessToken,
+  amount = "100.00",
+  environment = "sandbox",
+  saveToVault = false,
+  vaultId = null
+) {
   try {
-      // Generate a random unique reference ID
-      const referenceId = generateUUID();
+    const referenceId = generateUUID();
+    const url =
+      environment === "production"
+        ? "https://api-m.paypal.com/v2/checkout/orders"
+        : "https://api-m.sandbox.paypal.com/v2/checkout/orders";
 
-      // Determine the correct PayPal URL based on environment
-      const url = env === 'production'
-          ? 'https://api-m.paypal.com/v2/checkout/orders'
-          : 'https://api-m.sandbox.paypal.com/v2/checkout/orders';
-
-      // Define the basic request body structure
-      const requestBody = {
-          "intent": "CAPTURE",
-          "purchase_units": [
-              {
-                  "reference_id": referenceId,
-                  "amount": {
-                      "currency_code": "USD",
-                      "value": amount
-                  }
-              }
-          ],
-          "payment_source": {
-              "paypal": {
-                  "experience_context": {
-                      "payment_method_preference": "IMMEDIATE_PAYMENT_REQUIRED",
-                      "brand_name": "PRODUCT BYTES",
-                      "landing_page": "LOGIN",
-                      "shipping_preference": "NO_SHIPPING",
-                      "return_url": "https://example.com/returnUrl",  // Modify these URLs
-                      "cancel_url": "https://example.com/cancelUrl"
-                  }
-              }
+    // Construct the default payload
+    const payload = {
+      intent: "CAPTURE",
+      purchase_units: [
+        {
+          reference_id: referenceId,
+          amount: {
+            currency_code: "USD",
+            value: amount
           }
+        }
+      ]
+    };
+
+    // Check if a vault ID is provided for using a saved card
+    if (vaultId) {
+      payload.payment_source = {
+        card: {
+          vault_id: vaultId
+        }
       };
-
-      // Conditionally add vault attributes if savePaymentMethod is true
-      if (savePaymentMethod) {
-          requestBody.payment_source.paypal.attributes = {
-              "vault": {
-                  "store_in_vault": "ON_SUCCESS",
-                  "usage_type": "MERCHANT"
-              }
-          };
+    } else {
+      // Default to using PayPal as the payment source
+      payload.payment_source = {
+        paypal: {
+          experience_context: {
+            payment_method_preference: "IMMEDIATE_PAYMENT_REQUIRED",
+            brand_name: "PRODUCT BYTES",
+            landing_page: "LOGIN",
+            shipping_preference: "NO_SHIPPING",
+            return_url: "https://example.com/returnUrl",
+            cancel_url: "https://example.com/cancelUrl"
+          }
+        }
+      };
+      
+      // Only include vault attributes if `saveToVault` is true
+      if (saveToVault) {
+        payload.payment_source.paypal.attributes = {
+          vault: {
+            store_in_vault: "ON_SUCCESS",
+            usage_type: "MERCHANT"
+          }
+        };
       }
+    }
 
-      const response = await fetch(url, {
-          method: 'POST',
-          headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${accessToken}`
-          },
-          body: JSON.stringify(requestBody)
-      });
+    // Send the request to PayPal
+    const response = await fetch(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${accessToken}`,
+        'PayPal-Request-Id': generateUUID(), // Ensure the request ID is unique per request
+      },
+      body: JSON.stringify(payload)
+    });
 
-      if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-      }
+    if (!response.ok) {
+      throw new Error(`HTTP error! Status: ${response.status}`);
+    }
 
-      const data = await response.json();
-      return data;
+    return await response.json();
   } catch (error) {
-      console.error('Error creating order:', error);
-      throw error;
+    console.error("Error creating order:", error);
+    throw error;
   }
 }
+
 
 
 /**
