@@ -79,6 +79,7 @@ async function chargeToken(paymentToken) {
 
 
     onMount(async () => {
+         isLoading = false;
       try {
         // Load PayPal SDK
         const paypal = await loadScript({
